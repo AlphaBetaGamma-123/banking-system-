@@ -15,7 +15,7 @@ int main() {
 
     
     for (int i = 0; i < n; ++i) {
-        cout << "Person " << i + 1 << ": Name - " << personArray[i].name << ", Age - " << personArray[i].age << endl;
+        cout << "Person " << i + 1 << ": Name - " << personArray[i].name << ", Age - " << personArray[i].age <<  endl;
     }
 
     delete[] personArray;
