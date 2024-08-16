@@ -3,7 +3,10 @@
 #include <iostream>
 
 PersonList deepCopyPersonList(PersonList pl) {
+
+
     PersonList newList;
+    
     newList.numPeople = pl.numPeople;
     newList.people = new Person[pl.numPeople]; 
 
