@@ -19,5 +19,7 @@ public:
     HighInterestSavings(double bal, double funds, double rate, int period, double bonus, double prev_bal)
     : SavingsAccount(bal, funds, rate, period), bonus_interest(bonus), prev_period_bal(prev_bal) {}
 
+    // Method. 
+    void add_bonus_interest() {}
     
 };
