@@ -18,10 +18,19 @@ public:
     // Parameterized constructor
     Transactions(int o_acc, int d_acc, int trans_id, int trans_time) : origin_acc(o_acc), dest_acc(d_acc), id(trans_id), time(trans_time) {}
 
-    // Getter methods
-
+     // Getter methods
+    int get_origin_acc() { return origin_acc; }
+    int get_dest_acc() { return dest_acc; }
+    int get_id() { return id; }
+    int get_time() { return time; }
 
     // Displaying info.
+    void display_transaction_info() {
+        cout << "Account From: " << origin_acc << "\n";
+        cout << "Account To: " << dest_acc << "\n";
+        cout << "Account ID: " << id << "\n";
+        cout << "Time: " << ctime(&time);
 
+    }
     
 };
