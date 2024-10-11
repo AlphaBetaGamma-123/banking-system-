@@ -21,13 +21,12 @@ public:
     CreditReport(int s, int rep_id, int missed, int d, double income, double expenses)
         : score(s), report_id(rep_id), num_repayments_missed(missed), date(d), income_past_year(income), expenses_past_year(expenses) {}
 
-    // // Placeholder methods
-    // vector<int> get_previous_scores() { return {}; }  // Placeholder
-    // vector<int> get_previous_reports() { return {}; }  // Placeholder
-    // vector<int> get_user_accounts() { return {}; }  // Placeholder
+   //Placeholder methods. 
+   //vector<int>get_pervious_scores() { return {}; }  // Placeholder
+    // vector<int> get_previous_reports() { return {}; } 
+    // vector<int> get_user_accounts() { return {}; }
 
-     // Display credit report info
-    void display_credit_report() const {
+       void display_credit_report() const {
         cout << "Credit Report ID: " << report_id << "\n";
         cout << "Credit Score: " << score << "\n";
         cout << "Repayments Missed: " << num_repayments_missed << "\n";
@@ -35,4 +34,5 @@ public:
         cout << "Expenses (Past Year): " << expenses_past_year << "\n";
         cout << "Report Date: " << std::ctime(&date);
     }
+    
 };
