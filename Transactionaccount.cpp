@@ -10,12 +10,12 @@ public:
     // Default constructor
     TransactionAccount() : Accounts() {}
 
-    // Parameterized constructor
     TransactionAccount(double bal, double funds) : Accounts(bal, funds) {}
 
-    // Transaction method
-    void new_transaction(double amount) override {
-        balance += amount;  // Simple addition for deposits (handle withdrawals with conditions)
+    // METHOD. 
+    void new_transaction (double amount ) override {
+        balance += amount;
         avail_funds += amount;
     }
+    
 };
