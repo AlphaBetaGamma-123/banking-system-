@@ -6,7 +6,7 @@
 
 using namespace std;
 
-// Base class for accounts
+// Abstract Base class for Accounts
 class Accounts {
 protected:
     double balance;
@@ -15,18 +15,19 @@ protected:
 public:
     Accounts() : balance(0.0), avail_funds(0.0) {}
     Accounts(double bal, double funds) : balance(bal), avail_funds(funds) {}
-    virtual void new_transaction(double amount) = 0;
+    virtual void new_transaction(double amount) = 0; // Abstract function
     virtual void display_account_info() const {
         cout << "Balance: $" << balance << "\n";
     }
     virtual ~Accounts() = default;
 };
 
-// Derived class for transaction accounts
+// TransactionAccount class derived from Accounts
 class TransactionAccount : public Accounts {
 public:
     TransactionAccount() : Accounts() {}
     TransactionAccount(double bal, double funds) : Accounts(bal, funds) {}
+
     void new_transaction(double amount) override {
         balance += amount;
         avail_funds += amount;
@@ -36,7 +37,19 @@ public:
     }
 };
 
-// Derived class for credit accounts
+// Abstract SavingsAccount class derived from Accounts
+class SavingsAccount : public Accounts {
+protected:
+    double interest_rate;
+
+public:
+    SavingsAccount() : Accounts(), interest_rate(0.0) {}
+    SavingsAccount(double bal, double funds, double rate) : Accounts(bal, funds), interest_rate(rate) {}
+
+    virtual void add_interest() = 0;
+};
+
+// CreditAccount class derived from Accounts
 class CreditAccount : public Accounts {
 private:
     double credit_limit;
@@ -55,13 +68,53 @@ public:
             cout << "Transaction exceeds credit limit!\n";
         }
     }
-
     void display_account_info() const override {
         cout << "Credit Account Balance: $" << balance << " (Limit: $" << credit_limit << ")\n";
     }
 };
 
-// User class for managing user information and accounts
+// TermSavings class derived from SavingsAccount
+class TermSavings : public SavingsAccount {
+private:
+    int deposit_term;
+
+public:
+    TermSavings() : SavingsAccount(), deposit_term(0) {}
+    TermSavings(double bal, double funds, double rate, int term)
+        : SavingsAccount(bal, funds, rate), deposit_term(term) {}
+
+    void add_interest() override {
+        balance += balance * interest_rate;
+    }
+
+    void change_term(int new_term) { deposit_term = new_term; }
+};
+
+// RewardsCredit class derived from CreditAccount
+class RewardsCredit : public CreditAccount {
+private:
+    int points;
+    double points_rate;
+
+public:
+    RewardsCredit() : CreditAccount(), points(0), points_rate(0.0) {}
+    RewardsCredit(double bal, double funds, double limit, double rate, double pts_rate)
+        : CreditAccount(bal, funds, limit, rate), points(0), points_rate(pts_rate) {}
+
+    void add_points(double amount) {
+        points += static_cast<int>(amount * points_rate);
+    }
+    void redeem_points(int pts) {
+        if (pts <= points) {
+            points -= pts;
+            cout << "Redeemed " << pts << " points!\n";
+        } else {
+            cout << "Not enough points to redeem!\n";
+        }
+    }
+};
+
+// Users class containing user information and accounts
 class Users {
 private:
     int user_id;
@@ -93,23 +146,31 @@ public:
         cout << "Number of Accounts: " << accounts.size() << "\n";
     }
 
-    void display_accounts() const {
-        if (accounts.empty()) {
-            cout << "No accounts available.\n";
+    void apply_for_loan() {
+        cout << "Your credit score is: " << credit_score << "\n";
+        if (credit_score < 600) {
+            cout << "Sorry, you are not eligible for a loan.\n";
             return;
         }
-        for (size_t i = 0; i < accounts.size(); ++i) {
-            cout << i + 1 << ". ";
-            accounts[i]->display_account_info();
-        }
-    }
 
-    void add_account(shared_ptr<Accounts> account) {
-        accounts.push_back(account);
+        double interest_rate = credit_score >= 800 ? 0.05 : credit_score >= 700 ? 0.1 : 0.15;
+
+        double loan_amount;
+        cout << "Enter the loan amount you want to borrow: ";
+        cin >> loan_amount;
+
+        int loan_term;
+        cout << "Choose loan term:\n1. 10 years\n2. 20 years\n3. 30 years\n";
+        cout << "Enter your choice: ";
+        cin >> loan_term;
+
+        int years = (loan_term == 1) ? 10 : (loan_term == 2) ? 20 : 30;
+        double total_repayment = loan_amount * pow(1 + interest_rate, years);
+        cout << "Your total repayment over " << years << " years is $" << total_repayment << "\n";
     }
 };
 
-// Bank class to manage all users and facilitate bank operations
+// Bank class to manage users and accounts
 class Bank {
 private:
     string bank_name;
@@ -131,125 +192,98 @@ public:
         }
         return nullptr;
     }
+
+    int generate_user_id() const {
+        return users_arr.size() + 1;
+    }
+
+    void reset_password() {
+        string username;
+        cout << "Enter your username: ";
+        cin >> username;
+
+        Users* user = find_user(username);
+        if (!user) {
+            cout << "Username not found.\n";
+            return;
+        }
+
+        cout << user->get_security_question() << "\n";
+        cout << "Answer: ";
+        string answer;
+        cin.ignore();
+        getline(cin, answer);
+
+        if (answer == user->get_security_answer()) {
+            string new_password;
+            cout << "Enter a new password: ";
+            cin >> new_password;
+            user->change_password(new_password);
+            cout << "Password reset successful!\n";
+        } else {
+            cout << "Incorrect answer. Password reset failed.\n";
+        }
+    }
+
+    void login() {
+        string username, password;
+        cout << "Username: ";
+        cin >> username;
+        cout << "Password: ";
+        cin >> password;
+
+        Users* user = find_user(username);
+        if (user && user->get_password() == password) {
+            cout << "\nWelcome, " << username << "!\n";
+            user->display_user_info();
+
+            int option;
+            do {
+                cout << "\n1. Apply for Loan\n0. Logout\nEnter option: ";
+                cin >> option;
+                if (option == 1) user->apply_for_loan();
+            } while (option != 0);
+        } else {
+            cout << "Invalid username or password.\n";
+        }
+    }
+
+    void create_new_user() {
+        string username, password, full_name, dob, security_question, security_answer;
+        char gender;
+        int credit_score;
+
+        cout << "Enter a new username: ";
+        cin >> username;
+
+        if (find_user(username)) {
+            cout << "Username already exists.\n";
+            return;
+        }
+
+        cout << "Enter a password: ";
+        cin >> password;
+        cout << "Enter your full name: ";
+        cin.ignore();
+        getline(cin, full_name);
+        cout << "Enter gender (M/F): ";
+        cin >> gender;
+        cout << "Enter date of birth (DD/MM/YYYY): ";
+        cin >> dob;
+        cout << "Enter an initial credit score: ";
+        cin >> credit_score;
+        cin.ignore();
+        cout << "Enter a security question: ";
+        getline(cin, security_question);
+        cout << "Enter the answer to your security question: ";
+        getline(cin, security_answer);
+
+        int new_user_id = generate_user_id();
+        Users newUser(new_user_id, full_name, gender, username, password, dob, security_question, security_answer, credit_score);
+        add_user(newUser);
+        cout << "New user created successfully!\n";
+    }
 };
-
-// Function to reset a user's password
-void reset_password(Bank& bank) {
-    string username;
-    cout << "Enter your username: ";
-    cin >> username;
-
-    Users* user = bank.find_user(username);
-    if (!user) {
-        cout << "Username not found.\n";
-        return;
-    }
-
-    cout << user->get_security_question() << "\n";
-    cout << "Answer: ";
-    string answer;
-    cin.ignore();
-    getline(cin, answer);
-
-    if (answer == user->get_security_answer()) {
-        string new_password;
-        cout << "Enter a new password: ";
-        cin >> new_password;
-        user->change_password(new_password);
-        cout << "Password reset successful!\n";
-    } else {
-        cout << "Incorrect answer. Password reset failed.\n";
-    }
-}
-
-// Function to allow a user to apply for a loan
-void apply_for_loan(Users* user) {
-    int credit_score = user->get_credit_score();
-    cout << "Your credit score is: " << credit_score << "\n";
-
-    if (credit_score < 600) {
-        cout << "Sorry, you are not eligible for a loan.\n";
-        return;
-    }
-
-    double interest_rate;
-    if (credit_score >= 800) interest_rate = 0.05;
-    else if (credit_score >= 700) interest_rate = 0.1;
-    else interest_rate = 0.15;
-
-    double loan_amount;
-    cout << "Enter the loan amount you want to borrow: ";
-    cin >> loan_amount;
-
-    int loan_term;
-    cout << "Choose loan term:\n1. 10 years\n2. 20 years\n3. 30 years\n";
-    cout << "Enter your choice: ";
-    cin >> loan_term;
-
-    int years = (loan_term == 1) ? 10 : (loan_term == 2) ? 20 : 30;
-    double total_repayment = loan_amount * pow(1 + interest_rate, years);
-    cout << "Your total repayment over " << years << " years is $" << total_repayment << "\n";
-}
-
-// Function to log in a user
-void login(Bank& bank) {
-    string username, password;
-    cout << "Username: ";
-    cin >> username;
-    cout << "Password: ";
-    cin >> password;
-
-    Users* user = bank.find_user(username);
-    if (user && user->get_password() == password) {
-        cout << "\nWelcome, " << username << "!\n";
-        user->display_user_info();
-
-        int option;
-        do {
-            cout << "\n1. Apply for Loan\n0. Logout\nEnter option: ";
-            cin >> option;
-            if (option == 1) apply_for_loan(user);
-        } while (option != 0);
-    } else {
-        cout << "Invalid username or password.\n";
-    }
-}
-
-// Function to create a new user
-void create_new_user(Bank& bank) {
-    string username, password, full_name, dob, security_question, security_answer;
-    char gender;
-    int credit_score;
-
-    cout << "Enter a new username: ";
-    cin >> username;
-
-    if (bank.find_user(username)) {
-        cout << "Username already exists.\n";
-        return;
-    }
-
-    cout << "Enter a password: ";
-    cin >> password;
-    cout << "Enter your full name: ";
-    cin.ignore();
-    getline(cin, full_name);
-    cout << "Enter gender (M/F): ";
-    cin >> gender;
-    cout << "Enter date of birth (DD/MM/YYYY): ";
-    cin >> dob;
-    cout << "Enter an initial credit score: ";
-    cin >> credit_score;
-    cin.ignore();
-    cout << "Enter a security question: ";
-    getline(cin, security_question);
-    cout << "Enter the answer to your security question: ";
-    getline(cin, security_answer);
-
-    Users newUser(bank.find_user(username) ? bank.find_user(username) + 1 : 1, full_name, gender, username, password, dob, security_question, security_answer, credit_score);
-    bank.add_user(newUser);
-    cout << "New user created successfully!\n";
-}
 
 int main() {
     Bank myBank("Global Bank", 1);
@@ -275,13 +309,13 @@ int main() {
 
         switch (choice) {
             case 1:
-                login(myBank);
+                myBank.login();
                 break;
             case 2:
-                create_new_user(myBank);
+                myBank.create_new_user();
                 break;
             case 3:
-                reset_password(myBank);
+                myBank.reset_password();
                 break;
             case 0:
                 cout << "Exiting program.\n";
