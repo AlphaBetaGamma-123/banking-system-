@@ -15,7 +15,8 @@ protected:
 public:
     Accounts() : balance(0.0), avail_funds(0.0) {}
     Accounts(double bal, double funds) : balance(bal), avail_funds(funds) {}
-    virtual void new_transaction(double amount) = 0; // Abstract function
+
+    virtual void new_transaction(double amount) = 0;
     virtual void display_account_info() const {
         cout << "Balance: $" << balance << "\n";
     }
@@ -32,21 +33,10 @@ public:
         balance += amount;
         avail_funds += amount;
     }
+
     void display_account_info() const override {
         cout << "Transaction Account Balance: $" << balance << "\n";
     }
-};
-
-// Abstract SavingsAccount class derived from Accounts
-class SavingsAccount : public Accounts {
-protected:
-    double interest_rate;
-
-public:
-    SavingsAccount() : Accounts(), interest_rate(0.0) {}
-    SavingsAccount(double bal, double funds, double rate) : Accounts(bal, funds), interest_rate(rate) {}
-
-    virtual void add_interest() = 0;
 };
 
 // CreditAccount class derived from Accounts
@@ -68,8 +58,38 @@ public:
             cout << "Transaction exceeds credit limit!\n";
         }
     }
+
     void display_account_info() const override {
         cout << "Credit Account Balance: $" << balance << " (Limit: $" << credit_limit << ")\n";
+    }
+};
+
+// SavingsAccount class derived from Accounts
+class SavingsAccount : public Accounts {
+private:
+    double interest_rate;
+
+public:
+    SavingsAccount() : Accounts(), interest_rate(0.02) {}
+    SavingsAccount(double bal, double funds, double rate) : Accounts(bal, funds), interest_rate(rate) {}
+
+    void new_transaction(double amount) override {
+        if (balance + amount >= 0) {
+            balance += amount;
+            avail_funds = balance;
+        } else {
+            cout << "Insufficient funds for this transaction.\n";
+        }
+    }
+
+    void add_interest() {
+        balance += balance * interest_rate;
+        avail_funds = balance;
+        cout << "Interest added. New balance: $" << balance << "\n";
+    }
+
+    void display_account_info() const override {
+        cout << "Savings Account Balance: $" << balance << " (Interest Rate: " << interest_rate * 100 << "%)\n";
     }
 };
 
@@ -80,37 +100,26 @@ private:
 
 public:
     TermSavings() : SavingsAccount(), deposit_term(0) {}
-    TermSavings(double bal, double funds, double rate, int term)
-        : SavingsAccount(bal, funds, rate), deposit_term(term) {}
+    TermSavings(double bal, double funds, double rate, int term) : SavingsAccount(bal, funds, rate), deposit_term(term) {}
 
-    void add_interest() override {
-        balance += balance * interest_rate;
-    }
-
-    void change_term(int new_term) { deposit_term = new_term; }
-};
-
-// RewardsCredit class derived from CreditAccount
-class RewardsCredit : public CreditAccount {
-private:
-    int points;
-    double points_rate;
-
-public:
-    RewardsCredit() : CreditAccount(), points(0), points_rate(0.0) {}
-    RewardsCredit(double bal, double funds, double limit, double rate, double pts_rate)
-        : CreditAccount(bal, funds, limit, rate), points(0), points_rate(pts_rate) {}
-
-    void add_points(double amount) {
-        points += static_cast<int>(amount * points_rate);
-    }
-    void redeem_points(int pts) {
-        if (pts <= points) {
-            points -= pts;
-            cout << "Redeemed " << pts << " points!\n";
+    void add_interest() {
+        if (deposit_term > 0) {
+            balance += balance * interest_rate;
+            avail_funds = balance;
+            cout << "Interest added for term. New balance: $" << balance << " (Term: " << deposit_term << " years)\n";
         } else {
-            cout << "Not enough points to redeem!\n";
+            cout << "Term is not set. Cannot add interest.\n";
         }
+    }
+
+    void set_term(int term) {
+        deposit_term = term;
+        cout << "Deposit term set to " << deposit_term << " years.\n";
+    }
+
+    void display_account_info() const override {
+        cout << "Term Savings Account Balance: $" << balance << " (Interest Rate: " << interest_rate * 100 
+             << "%, Term: " << deposit_term << " years)\n";
     }
 };
 
@@ -126,24 +135,36 @@ private:
     string security_question;
     string security_answer;
     int credit_score;
-    vector<shared_ptr<Accounts>> accounts;
+    shared_ptr<Accounts> account;
 
 public:
-    Users(int id, string name, char g, string user, string pass, string birthdate, string sec_question, string sec_answer, int score)
-        : user_id(id), full_name(name), gender(g), username(user), password(pass), dob(birthdate), security_question(sec_question), security_answer(sec_answer), credit_score(score) {}
+    Users(int id, string name, char g, string user, string pass, string birthdate, string sec_question, string sec_answer, int score, shared_ptr<Accounts> acc)
+        : user_id(id), full_name(name), gender(g), username(user), password(pass), dob(birthdate), security_question(sec_question), security_answer(sec_answer), credit_score(score), account(acc) {}
 
     string get_username() const { return username; }
     string get_password() const { return password; }
     string get_security_question() const { return security_question; }
     string get_security_answer() const { return security_answer; }
     int get_credit_score() const { return credit_score; }
-    
+
     void change_password(string new_pass) { password = new_pass; }
 
     void display_user_info() const {
         cout << "User ID: " << user_id << "\nFull Name: " << full_name << "\n";
         cout << "DOB: " << dob << "\n";
-        cout << "Number of Accounts: " << accounts.size() << "\n";
+        account->display_account_info();
+    }
+
+    void deposit(double amount) {
+        account->new_transaction(amount);
+        cout << "Deposit successful.\n";
+        account->display_account_info();
+    }
+
+    void withdraw(double amount) {
+        account->new_transaction(-amount);
+        cout << "Withdraw successful.\n";
+        account->display_account_info();
     }
 
     void apply_for_loan() {
@@ -168,6 +189,24 @@ public:
         double total_repayment = loan_amount * pow(1 + interest_rate, years);
         cout << "Your total repayment over " << years << " years is $" << total_repayment << "\n";
     }
+
+    void add_interest_to_savings() {
+        auto savings_account = dynamic_pointer_cast<SavingsAccount>(account);
+        if (savings_account) {
+            savings_account->add_interest();
+        } else {
+            cout << "This account is not a savings account.\n";
+        }
+    }
+
+    void add_interest_to_term_savings() {
+        auto term_savings_account = dynamic_pointer_cast<TermSavings>(account);
+        if (term_savings_account) {
+            term_savings_account->add_interest();
+        } else {
+            cout << "This account is not a term savings account.\n";
+        }
+    }
 };
 
 // Bank class to manage users and accounts
@@ -191,10 +230,6 @@ public:
             }
         }
         return nullptr;
-    }
-
-    int generate_user_id() const {
-        return users_arr.size() + 1;
     }
 
     void reset_password() {
@@ -239,9 +274,27 @@ public:
 
             int option;
             do {
-                cout << "\n1. Apply for Loan\n0. Logout\nEnter option: ";
+                cout << "\n1. View Accounts\n2. Deposit\n3. Withdraw\n4. Apply for Loan\n5. Add Interest (Savings Account)\n6. Add Interest (Term Savings)\n0. Logout\nEnter option: ";
                 cin >> option;
-                if (option == 1) user->apply_for_loan();
+                if (option == 1) {
+                    user->display_user_info();
+                } else if (option == 2) {
+                    double amount;
+                    cout << "Enter amount to deposit: ";
+                    cin >> amount;
+                    user->deposit(amount);
+                } else if (option == 3) {
+                    double amount;
+                    cout << "Enter amount to withdraw: ";
+                    cin >> amount;
+                    user->withdraw(amount);
+                } else if (option == 4) {
+                    user->apply_for_loan();
+                } else if (option == 5) {
+                    user->add_interest_to_savings();
+                } else if (option == 6) {
+                    user->add_interest_to_term_savings();
+                }
             } while (option != 0);
         } else {
             cout << "Invalid username or password.\n";
@@ -278,8 +331,8 @@ public:
         cout << "Enter the answer to your security question: ";
         getline(cin, security_answer);
 
-        int new_user_id = generate_user_id();
-        Users newUser(new_user_id, full_name, gender, username, password, dob, security_question, security_answer, credit_score);
+        shared_ptr<Accounts> account = make_shared<TermSavings>(1000, 1000, 0.03, 5); // Default to TermSavings with a 5-year term
+        Users newUser(users_arr.size() + 1, full_name, gender, username, password, dob, security_question, security_answer, credit_score, account);
         add_user(newUser);
         cout << "New user created successfully!\n";
     }
@@ -289,9 +342,13 @@ int main() {
     Bank myBank("Global Bank", 1);
 
     // Predefined users for testing
-    Users user1(1, "John Doe", 'M', "johndoe", "password123", "15/04/1995", "What is your favorite color?", "blue", 750);
-    Users user2(2, "User Two", 'M', "a", "b", "01/01/1990", "What is your pet's name?", "buddy", 700);
-    Users user3(3, "Charlie Brown", 'M', "x", "y", "23/08/1988", "What is your mother's maiden name?", "smith", 650);
+    shared_ptr<Accounts> account1 = make_shared<TransactionAccount>(1000, 1000);
+    shared_ptr<Accounts> account2 = make_shared<SavingsAccount>(2000, 2000, 0.03);
+    shared_ptr<Accounts> account3 = make_shared<TermSavings>(1500, 1500, 0.04, 5); // TermSavings with a 5-year term
+
+    Users user1(1, "John Doe", 'M', "a", "b", "15/04/1995", "What is your favorite color?", "blue", 750, account1);
+    Users user2(2, "User Two", 'M', "c", "d", "01/01/1990", "What is your pet's name?", "buddy", 700, account2);
+    Users user3(3, "Charlie Brown", 'M', "x", "y", "23/08/1988", "What is your mother's maiden name?", "smith", 650, account3);
     
     myBank.add_user(user1);
     myBank.add_user(user2);
