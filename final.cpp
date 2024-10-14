@@ -66,13 +66,17 @@ public:
 
 // SavingsAccount class derived from Accounts
 class SavingsAccount : public Accounts {
-private:
-    double interest_rate;
+protected:
+    double interest_rate;  // Interest rate for the savings account
 
 public:
+    // Default constructor with a base interest rate of 2%
     SavingsAccount() : Accounts(), interest_rate(0.02) {}
+
+    // Constructor with parameters for balance, funds, and interest rate
     SavingsAccount(double bal, double funds, double rate) : Accounts(bal, funds), interest_rate(rate) {}
 
+    // Ensure the balance does not go negative on withdrawal
     void new_transaction(double amount) override {
         if (balance + amount >= 0) {
             balance += amount;
@@ -82,12 +86,14 @@ public:
         }
     }
 
+    // Add interest to the balance
     void add_interest() {
         balance += balance * interest_rate;
         avail_funds = balance;
         cout << "Interest added. New balance: $" << balance << "\n";
     }
 
+    // Display account information, including the interest rate
     void display_account_info() const override {
         cout << "Savings Account Balance: $" << balance << " (Interest Rate: " << interest_rate * 100 << "%)\n";
     }
@@ -96,32 +102,27 @@ public:
 // TermSavings class derived from SavingsAccount
 class TermSavings : public SavingsAccount {
 private:
-    int deposit_term;
+    int deposit_term; // Number of years for the term savings
 
 public:
-    TermSavings() : SavingsAccount(), deposit_term(0) {}
-    TermSavings(double bal, double funds, double rate, int term) : SavingsAccount(bal, funds, rate), deposit_term(term) {}
+    // Constructor to initialize balance, funds, interest rate, and term
+    TermSavings(double bal, double funds, double rate, int term) 
+        : SavingsAccount(bal, funds, rate), deposit_term(term) {}
 
-    void add_interest() {
-        if (deposit_term > 0) {
-            balance += balance * interest_rate;
-            avail_funds = balance;
-            cout << "Interest added for term. New balance: $" << balance << " (Term: " << deposit_term << " years)\n";
-        } else {
-            cout << "Term is not set. Cannot add interest.\n";
-        }
+    // Override to add interest specific to term savings
+    void add_interest()  {
+        balance += balance * interest_rate;  // Access protected member directly
+        avail_funds = balance;
+        cout << "Interest added for term savings. New balance: $" << balance << "\n";
     }
 
-    void set_term(int term) {
-        deposit_term = term;
-        cout << "Deposit term set to " << deposit_term << " years.\n";
-    }
-
+    // Display term savings account information, including the term length
     void display_account_info() const override {
         cout << "Term Savings Account Balance: $" << balance << " (Interest Rate: " << interest_rate * 100 
              << "%, Term: " << deposit_term << " years)\n";
     }
 };
+
 
 // Users class containing user information and accounts
 class Users {
