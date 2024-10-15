@@ -20,7 +20,6 @@ public:
     double get_balance() const;
     void set_balance(double new_balance);
 
-    //virtual ~Accounts() = default;
 };
 
 #endif
