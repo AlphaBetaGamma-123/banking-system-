@@ -11,6 +11,7 @@ void Bank::add_user(const Users& user) {
 
 Users* Bank::find_user(const string& username) {
     for (auto& user : users_arr) {
+        cout << "Checking user: " << user.get_username() << endl; // Debug output
         if (user.get_username() == username) {
             return &user;
         }
@@ -62,38 +63,80 @@ void Bank::login() {
         do {
             cout << "\n1. View Accounts\n2. Deposit\n3. Withdraw\n4. Transfer Funds\n0. Logout\nEnter option: ";
             cin >> option;
-            if (option == 1) {
-                user->display_user_info();
-            } else if (option == 2) {
-                double amount;
-                cout << "Enter amount to deposit: ";
-                cin >> amount;
-                user->deposit(amount);
-            } else if (option == 3) {
-                double amount;
-                cout << "Enter amount to withdraw: ";
-                cin >> amount;
-                user->withdraw(amount);
-            } else if (option == 4) {
-                string receiver_username;
-                double amount;
-                cout << "Enter receiver username: ";
-                cin >> receiver_username;
-                cout << "Enter amount to transfer: ";
-                cin >> amount;
+            
+            if (cin.fail()) { // Check for invalid input
+                cin.clear();
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                cout << "Invalid input. Please enter a number.\n";
+                continue;
+            }
 
-                Users* receiver = find_user(receiver_username);
-                if (receiver) {
-                    user->transfer_funds(*receiver, amount);
-                } else {
-                    cout << "Receiver not found.\n";
+            switch (option) {
+                case 1:
+                    user->display_user_info();
+                    break;
+                case 2: {
+                    double amount;
+                    cout << "Enter amount to deposit: ";
+                    cin >> amount;
+                    if (cin.fail()) { // Check for invalid input
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid amount. Please try again.\n";
+                    } else {
+                        user->deposit(amount);
+                    }
+                    break;
                 }
+                case 3: {
+                    double amount;
+                    cout << "Enter amount to withdraw: ";
+                    cin >> amount;
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid amount. Please try again.\n";
+                    } else {
+                        user->withdraw(amount);
+                    }
+                    break;
+                }
+                case 4: {
+                    string receiver_username;
+                    double amount;
+                    cout << "Enter receiver username: ";
+                    cin >> receiver_username;
+                    cout << "Receiver entered: " << receiver_username << endl; // Debug output
+                    cout << "Enter amount to transfer: ";
+                    cin >> amount;
+                    
+                    if (cin.fail()) {
+                        cin.clear();
+                        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                        cout << "Invalid amount. Please try again.\n";
+                        break;
+                    }
+
+                    Users* receiver = find_user(receiver_username);
+                    if (receiver) {
+                        user->transfer_funds(*receiver, amount);
+                    } else {
+                        cout << "Receiver not found.\n";
+                    }
+                    break;
+                }
+                case 0:
+                    cout << "Logging out...\n";
+                    break;
+                default:
+                    cout << "Invalid option. Please choose a valid option.\n";
             }
         } while (option != 0);
     } else {
         cout << "Invalid username or password.\n";
     }
 }
+
 
 void Bank::create_new_user() {
     string username, password, full_name, dob, security_question, security_answer;
