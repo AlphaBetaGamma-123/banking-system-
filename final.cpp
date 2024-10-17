@@ -61,6 +61,7 @@ int main() {
                 break;
             case 0:
                 cout << "Exiting program.\n";
+                myBank.save_users();
                 break;
             default:
                 cout << "Invalid choice. Try again.\n";

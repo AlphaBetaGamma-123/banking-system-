@@ -10,6 +10,7 @@ protected:
     double balance;
     double avail_funds;
     std::vector<Transactions> transaction_log;
+    
 public:
     // Default constructor
     Accounts(){
@@ -32,18 +33,37 @@ public:
         return avail_funds; 
         }
 
-    Transactions new_transaction(double amount, Accounts dest){
-        Transactions t = Transactions(amount, this->get_account_name(), dest.get_account_name());
-        balance = balance - amount;
-        avail_funds = avail_funds - amount;
-        dest.balance = dest.balance + amount;
-        dest.avail_funds = dest.avail_funds + amount;
-        transaction_log.push_back(t);
-        return t;
+    Transactions new_transaction(double amount, Accounts &dest){
+        if(amount >0){
+
+            if (balance >= amount) {
+            //Transactions t = Transactions(amount, this->get_account_name(), dest.get_account_name());
+            balance = balance - amount;
+            avail_funds = avail_funds - amount;
+            Transactions t = dest.new_transaction(-amount, dest);
+            transaction_log.push_back(t);
+            return t;
+
+            } else {
+                cout << "\nTransaction exceeds account balance!";
+                return Transactions();
+            }
+        }else{
+            balance = balance - amount;
+            avail_funds = avail_funds - amount;
+            Transactions t = Transactions(-amount, this->get_account_name(), dest.get_account_name());
+            transaction_log.push_back(t);
+            std::cout << balance;
+            return t;
+        }
     };
 
     std::string get_account_name(){
         return account_name;
+    }
+
+    std::string write_account(){
+        
     }
 
 
